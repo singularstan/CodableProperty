@@ -1,3 +1,3 @@
 # CodableProperty
 
-A description of this package.
+Generic property wrapper to extend Codable protocol with automatic handling of common errors during JSON parsing.
