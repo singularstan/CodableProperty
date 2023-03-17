@@ -87,11 +87,26 @@ extension KeyedDecodingContainer where Key == DynamicCodingKey
         while let key_name = iterator.next() {
             guard let coding_key = traits.findCodingKey(name: key_name, container: nested_cnt)
             else {
-                let ctx = DecodingError.Context(codingPath: nested_cnt.codingPath, debugDescription: "nested container not found")
+                var failed_path = self.codingPath
+                failed_path.append(contentsOf: path.map({
+                    DynamicCodingKey(key: $0)
+                }))
+                let ctx = DecodingError.Context(codingPath: failed_path,
+                                                debugDescription: "failed to iterate path sequence. \(key_name) not found")
                 throw DecodingError.keyNotFound(DynamicCodingKey(key: key_name), ctx)
             }
             if iterator2.next() != nil {
-                nested_cnt = try nested_cnt.nestedContainer(keyedBy: DynamicCodingKey.self, forKey: coding_key)
+                do {
+                    nested_cnt = try nested_cnt.nestedContainer(keyedBy: DynamicCodingKey.self, forKey: coding_key)
+                } catch DecodingError.typeMismatch {
+                    var failed_path = self.codingPath
+                    failed_path.append(contentsOf: path.map({
+                        DynamicCodingKey(key: $0)
+                    }))
+                    let ctx = DecodingError.Context(codingPath: failed_path,
+                                                    debugDescription: "failed to iterate path sequence. \(coding_key.stringValue) does not contain dictionary")
+                    throw DecodingError.keyNotFound(DynamicCodingKey(key: iterator.next()!), ctx)
+                }
             } else {
                 return (nested_cnt, key_name)
             }

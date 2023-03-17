@@ -73,10 +73,13 @@ final class TreeDecodeTest: XCTestCase {
     static let jsonToFlat = Data("""
     {
         "level1":{
-            "stringProperty": "new value",
-            "level2":{
-                        "intProperty": 111
-                     }
+                    "stringProperty": "new value",
+                    "level2":{
+                                "intProperty": 111,
+                                "level3": {
+                                            "level4Null": null
+                                          },
+                             }
                  }
     }
     """.utf8)
@@ -99,6 +102,63 @@ final class TreeDecodeTest: XCTestCase {
         let decoded = try JSONDecoder().decode(Flattened.self, from: Self.jsonToFlat)
         XCTAssertTrue(decoded.level1.stringProperty == "new value")
         XCTAssertEqual(decoded.level1.level2.intProperty, decoded.level2.intProperty, "decoding by path failed")
+    }
+    
+    struct FlattenedWithNullAtEnd: CodableEntity, DefaultConstructible
+    {
+        @CodableProperty(key: "level1.level2.level3.level4Null.value", mandatory: true)
+        var nullValue: Level2Object
+        
+        static var codableKeyPaths = KeyPathList{
+            \Self._nullValue
+        }
+    }
+    
+    func testPartiallyFlattenedTreeFailureEnd() throws {
+        do {
+            _ = try JSONDecoder().decode(FlattenedWithNullAtEnd.self, from: Self.jsonToFlat)
+            XCTFail()
+        } catch DecodingError.keyNotFound(let key, let context) where key.stringValue == "value" {
+            print(context.codingPath)
+        }
+    }
+    
+    struct FlattenedWithNullInMiddle: CodableEntity, DefaultConstructible
+    {
+        @CodableProperty(key: "level1.level2.level3.level4Null.deadLevel.deadLevel.value", mandatory: true)
+        var nullValue: Level2Object
+        
+        static var codableKeyPaths = KeyPathList{
+            \Self._nullValue
+        }
+    }
+    
+    func testPartiallyFlattenedTreeFailureMiddle() throws {
+        do {
+            _ = try JSONDecoder().decode(FlattenedWithNullInMiddle.self, from: Self.jsonToFlat)
+            XCTFail()
+        } catch DecodingError.keyNotFound(let key, let context) where key.stringValue == "deadLevel" {
+            print(context.codingPath)
+        }
+    }
+    
+    struct FlattenedNoKeyFailureTest: CodableEntity, DefaultConstructible
+    {
+        @CodableProperty(key: "level1.level2.noKey.value", mandatory: true)
+        var noKey: Level2Object
+        
+        static var codableKeyPaths = KeyPathList{
+            \Self._noKey
+        }
+    }
+    
+    func testPartiallyFlattenedTreeFailureNoKey() throws {
+        do {
+            _ = try JSONDecoder().decode(FlattenedNoKeyFailureTest.self, from: Self.jsonToFlat)
+            XCTFail()
+        } catch DecodingError.keyNotFound(let key, let context) where key.stringValue == "noKey" {
+            print(context.codingPath)
+        }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //MARK: -
