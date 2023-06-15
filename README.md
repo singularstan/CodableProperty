@@ -235,4 +235,4 @@ And it will contain value "string1,string2,string3" after decoding.
 
 Credits
 =======
-CodableProperty was implement by Stan Reznichenko to pretect you from evil backend developers.
+CodableProperty was implemented by Stan Reznichenko to pretect you from evil backend developers.
