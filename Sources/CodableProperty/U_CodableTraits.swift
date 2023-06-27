@@ -66,13 +66,13 @@ public extension CodableTraits
     }
 }
 
-extension CodableTraits where StorableType == CodableType
+public extension CodableTraits where StorableType == CodableType
 {
-    public static func createStorable(_ decoded: CodableType) -> StorableType? {
+    static func createStorable(_ decoded: CodableType) -> StorableType? {
         decoded
     }
     
-    public static func createDecodable(_ stored: StorableType) -> CodableType? {
+    static func createDecodable(_ stored: StorableType) -> CodableType? {
         stored
     }
 }

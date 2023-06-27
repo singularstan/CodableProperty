@@ -64,7 +64,7 @@ public struct CodableKeyedProperty<Traits: CodableTraits>: CodableIdentifiable
                                      value: &self.wrappedValue)
             } else {
                 let ctx = DecodingError.Context(codingPath: container.codingPath,
-                                                debugDescription: "neither path nor reflected name were not provided")
+                                                debugDescription: "neither path nor reflected name were provided")
                 throw DecodingError.keyNotFound(DynamicCodingKey(key: ""), ctx)
             }
         }

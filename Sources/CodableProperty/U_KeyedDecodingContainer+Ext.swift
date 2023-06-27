@@ -46,7 +46,7 @@ extension KeyedDecodingContainer where Key == DynamicCodingKey
             }
         } catch let error as DecodingError {
             switch error {
-                case .typeMismatch:
+                case .typeMismatch, .dataCorrupted:
                     //sysLogPrint("typeMismatch! trying to recover decodable for:\(key)", .service(.info))
                     if let decoded = traits.fallback(from: self, coding_key) {
                         if let stored = traits.createStorable(decoded) {

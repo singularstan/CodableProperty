@@ -130,4 +130,26 @@ final class CommonDecodeTest: XCTestCase {
         XCTAssertTrue(decoded.simpleEnum == .two)
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    static let jsonWithArrayOfScalar = Data("""
+    {
+        "key": {
+                "nested": [0,1,2,3]
+               }
+    }
+    """.utf8)
+    
+    struct ArrayOfScalarTest: CodableEntity, DefaultConstructible
+    {
+        @CodableProperty(key: "key.nested")
+        var key: [Int]
+        
+        static var codableKeyPaths = KeyPathList {
+            \Self._key
+        }
+    }
+    
+    func testArrayOfScalar() throws {
+        let decoded = try JSONDecoder().decode(ArrayOfScalarTest.self, from: Self.jsonWithArrayOfScalar)
+        XCTAssertTrue(decoded.key.count == 4)
+    }
 }
