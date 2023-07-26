@@ -65,7 +65,7 @@ final class CommonDecodeTest: XCTestCase {
         "stringProperty": "new value",
         "floatTypeMismatch": "9.9",
         "dateISO8601": "2020-12-05T15:39:02Z",
-        "link": "https://test.com/path"
+        "link": "https://test.com/path",
     }
     """.utf8)
     
@@ -151,5 +151,88 @@ final class CommonDecodeTest: XCTestCase {
     func testArrayOfScalar() throws {
         let decoded = try JSONDecoder().decode(ArrayOfScalarTest.self, from: Self.jsonWithArrayOfScalar)
         XCTAssertTrue(decoded.key.count == 4)
+    }
+    
+    static let jsonWithURLs = Data("""
+    {
+        "link": "https://test.com/path",
+        "optionalLink": "https://test.com/path",
+        "nullableLink": null,
+        "invalidLink": " ",
+        "invalidOptionalLink": " "
+    }
+    """.utf8)
+    
+    struct URLsTest: CodableEntity, DefaultConstructible
+    {
+        @CodableURL
+        var link = URL(string: "file://")!
+        
+        @CodableOptionalURL
+        var optionalLink
+        
+        @CodableOptionalURL
+        var nullableLink
+        
+        static var codableKeyPaths = KeyPathList {
+            \Self._link
+            \Self._optionalLink
+            \Self._nullableLink
+        }
+    }
+    
+    func testURLs() throws {
+        let decoded = try JSONDecoder().decode(URLsTest.self, from: Self.jsonWithURLs)
+        XCTAssertTrue(decoded.link.absoluteString == "https://test.com/path")
+        XCTAssertTrue(decoded.optionalLink?.absoluteString == "https://test.com/path")
+        if let x = decoded.nullableLink {
+            XCTFail()
+        }
+    }
+    
+    struct URLsValidationTest: CodableEntity, DefaultConstructible
+    {
+        @CodableURL
+        var invalidLink = URL(string: "file://")!
+        
+        static var codableKeyPaths = KeyPathList {
+            \Self._invalidLink
+        }
+    }
+    
+    func testURLsValidation() throws {
+        do {
+            _ = try JSONDecoder().decode(URLsValidationTest.self, from: Self.jsonWithURLs)
+            XCTFail()
+        } catch DecodingError.dataCorrupted(let ctx) where
+                    ctx.codingPath.count == 1 &&
+                    ctx.codingPath[0].stringValue == "invalidLink"{
+            
+        } catch {
+            XCTFail()
+        }
+    }
+    
+    struct OptionalURLValidationTest: CodableEntity, DefaultConstructible
+    {
+        @CodableOptionalURL
+        var invalidOptionalLink
+        
+        static var codableKeyPaths = KeyPathList {
+            \Self._invalidOptionalLink
+        }
+    }
+    
+    func testOptionalURLValidation() throws {
+        do {
+            _ = try JSONDecoder().decode(OptionalURLValidationTest.self, from: Self.jsonWithURLs)
+            XCTFail()
+        } catch DecodingError.dataCorrupted(let ctx) where
+                    ctx.codingPath.count == 1 &&
+                    ctx.codingPath[0].stringValue == "invalidOptionalLink"{
+            print("")
+        } catch {
+            XCTFail()
+        }
     }
 }

@@ -121,8 +121,8 @@ public typealias CodableScalar<T: Codable & LosslessStringConvertible> = Codable
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public struct StableOptionalScalarTraits<T: OptionalType>: CodableTraits where T.WrappedType: Codable & LosslessStringConvertible
 {
-    public typealias StoredType = T
-    public typealias DecodedType = T.WrappedType
+    public typealias StorableType = T
+    public typealias CodableType = T.WrappedType
     
     public static func assignStorableNil(from container: DecodeContainer,
                                          dynamicKey: DynamicCodingKey,
@@ -132,15 +132,16 @@ public struct StableOptionalScalarTraits<T: OptionalType>: CodableTraits where T
         return true
     }
     
-    public static func createStorable(_ decoded: DecodedType) -> StoredType? {
-        StoredType(value: decoded)
+    public static func createStorable(_ decoded: CodableType) -> StorableType? {
+        StorableType(value: decoded)
     }
     
-    public static func createDecodable(_ stored: StoredType) -> DecodedType? {
+    public static func createDecodable(_ stored: StorableType) -> CodableType? {
         stored.asOptional
     }
     
-    public static func fallback(from container: DecodeContainer, _ dynamicKey: DynamicCodingKey) -> DecodedType? {
+    public static func fallback(from container: DecodeContainer, _ dynamicKey: DynamicCodingKey) -> CodableType? {
+        
         @inline(__always)
         func decode<T: Decodable & LosslessStringConvertible>(_: T.Type) -> (DecodeContainer, DynamicCodingKey) -> LosslessStringConvertible? {
             return { try? $0.decode(T.self, forKey: $1) }
@@ -160,14 +161,39 @@ public struct StableOptionalScalarTraits<T: OptionalType>: CodableTraits where T
             decode(Double.self),
             decode(Float.self),
         ].compactMap({$0(container, dynamicKey)}).first {
-            return DecodedType("\(str_representable)")
+            return CodableType("\(str_representable)")
         }
         return nil
     }
 }
 
-public typealias CodableOptionalScalar<T: OptionalType> = CodableKeyedProperty<StableOptionalScalarTraits<T>>
+public typealias CodableStableOptionalScalar<T: OptionalType> = CodableKeyedProperty<StableOptionalScalarTraits<T>>
 where T.WrappedType: Codable & LosslessStringConvertible
+
+public struct OptionalScalarTraits<T: OptionalType>: CodableTraits where T.WrappedType: Codable
+{
+    public typealias StorableType = T
+    public typealias CodableType = T.WrappedType
+    
+    public static func assignStorableNil(from container: DecodeContainer,
+                                         dynamicKey: DynamicCodingKey,
+                                         mandatory: Bool,
+                                         value: inout StorableType) -> Bool {
+        value = T()
+        return true
+    }
+    
+    public static func createStorable(_ decoded: CodableType) -> StorableType? {
+        StorableType(value: decoded)
+    }
+    
+    public static func createDecodable(_ stored: StorableType) -> CodableType? {
+        stored.asOptional
+    }
+}
+
+public typealias CodableOptionalScalar<T: OptionalType> = CodableKeyedProperty<OptionalScalarTraits<T>>
+where T.WrappedType: Codable
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //MARK: - stable bool
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -313,3 +339,32 @@ public struct URLTraits: CodableTraits
 }
 
 public typealias CodableURL = CodableKeyedProperty<URLTraits>
+
+public struct OptionalURLTraits: CodableTraits
+{
+    public typealias StorableType = URL?
+    public typealias CodableType = String
+    
+    public static func assignStorableNil(from container: DecodeContainer,
+                                         dynamicKey: DynamicCodingKey,
+                                         mandatory: Bool,
+                                         value: inout StorableType) -> Bool {
+        value = nil
+        return true
+    }
+    
+    public static func createStorable(_ storable: String) -> StorableType? {
+        //double optional here
+        if let url = URL(string: storable) {
+            return url
+        } else {
+            return nil
+        }
+    }
+    
+    public static func createDecodable(_ storable: URL?) -> CodableType? {
+        storable.flatMap { $0.absoluteString }
+    }
+}
+
+public typealias CodableOptionalURL = CodableKeyedProperty<OptionalURLTraits>

@@ -62,7 +62,7 @@ final class OptionalsDecodeTest: XCTestCase {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     struct OptionalFallbackDecodingTest: CodableEntity, DefaultConstructible
     {
-        @CodableOptionalScalar
+        @CodableStableOptionalScalar
         var value4: Int? = 10
         
         static var codableKeyPaths = KeyPathList{
