@@ -15,7 +15,8 @@ final class OptionalsDecodeTest: XCTestCase {
         "value1": "value",
         "value2": null,
         "value4": "99",
-        "value5": 100
+        "value5": 100,
+        "value6": "opt2"
     }
     """.utf8)
     
@@ -112,5 +113,42 @@ final class OptionalsDecodeTest: XCTestCase {
         } catch {
             XCTFail()
         }
+    }
+    
+    enum EnumInt: Int, Codable
+    {
+        case opt1 = 0
+        case opt2 = 100
+    }
+    
+    enum EnumString: String, Codable
+    {
+        case opt1
+        case opt2
+    }
+    
+    struct OptionalEnumTest: CodableEntity, DefaultConstructible
+    {
+        @CodableOptionalScalar
+        var value5: EnumInt?
+        
+        @CodableOptionalScalar
+        var value6: EnumString?
+        
+        @CodableOptionalScalar
+        var value2: EnumString? = .opt1
+        
+        static var codableKeyPaths = KeyPathList{
+            \Self._value5
+            \Self._value6
+            \Self._value2
+        }
+    }
+    
+    func testOptionalEnum() throws {
+        let decoded = try JSONDecoder().decode(OptionalEnumTest.self, from: Self.jsonWithOptionals)
+        XCTAssertTrue(decoded.value5 == .opt2)
+        XCTAssertTrue(decoded.value6 == .opt2)
+        XCTAssertNil(decoded.value2)
     }
 }

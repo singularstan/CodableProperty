@@ -106,28 +106,40 @@ final class CommonDecodeTest: XCTestCase {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     static let jsonWithEnum = Data("""
     {
-        "simpleEnum": "two"
+        "stringEnum": "two",
+        "intEnum": 2
     }
     """.utf8)
     
-    enum SimpleEnum: String, Codable
+    enum StringEnum: String, Codable
     {
         case one, two
     }
 
+    enum IntEnum: Int, Codable
+    {
+        case one = 1
+        case two = 2
+    }
+    
     struct SimpleEnumTest: CodableEntity, DefaultConstructible
     {
         @CodableProperty
-        var simpleEnum: SimpleEnum = .one
+        var stringEnum: StringEnum = .one
+        
+        @CodableProperty
+        var intEnum: IntEnum = .one
         
         static var codableKeyPaths = KeyPathList{
-            \Self._simpleEnum
+            \Self._stringEnum
+            \Self._intEnum
         }
     }
     
     func testEnumDecoding() throws {
         let decoded = try JSONDecoder().decode(SimpleEnumTest.self, from: Self.jsonWithEnum)
-        XCTAssertTrue(decoded.simpleEnum == .two)
+        XCTAssertTrue(decoded.stringEnum == .two)
+        XCTAssertTrue(decoded.intEnum == .two)
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     static let jsonWithArrayOfScalar = Data("""
@@ -172,7 +184,7 @@ final class CommonDecodeTest: XCTestCase {
         var optionalLink
         
         @CodableOptionalURL
-        var nullableLink
+        var nullableLink = URL(string: "file://")!
         
         static var codableKeyPaths = KeyPathList {
             \Self._link
@@ -185,7 +197,7 @@ final class CommonDecodeTest: XCTestCase {
         let decoded = try JSONDecoder().decode(URLsTest.self, from: Self.jsonWithURLs)
         XCTAssertTrue(decoded.link.absoluteString == "https://test.com/path")
         XCTAssertTrue(decoded.optionalLink?.absoluteString == "https://test.com/path")
-        if let x = decoded.nullableLink {
+        if decoded.nullableLink != nil {
             XCTFail()
         }
     }
